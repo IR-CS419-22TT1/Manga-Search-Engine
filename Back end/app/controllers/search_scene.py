@@ -22,4 +22,3 @@ class SearchScene(Resource):
             text = []
         top_k = args['top_k']
         return self.service.get_result(image_path, text, top_k)
-

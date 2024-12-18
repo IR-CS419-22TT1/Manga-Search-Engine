@@ -13,6 +13,7 @@ class SearchEngine:
         # Load the index.json file
         with open(index_path, "r", encoding="utf-8") as f:
             self.index = json.load(f)
+            print("Index loaded successfully.")
 
         # Load Vietnamese stop words from file
         with open(stopwords_path, "r", encoding="utf-8") as f:
@@ -55,9 +56,11 @@ class SearchEngine:
         print(f"Processing doc_id: {doc_id}")
         # Standardize the doc_id
         json_path = doc_id + ".json"
-        json_path = "./" + json_path
+        json_path = "app\\database\\" + json_path
         file_path = json_path
+        print(f"File path: {file_path}")
         if os.path.exists(file_path):
+            print(f"Found File path: {file_path}")
             with open(file_path, "r", encoding="utf-8") as f:
                 doc_data = json.load(f)
                 # Ensure the file contains a list of objects
@@ -174,6 +177,7 @@ class SearchEngine:
 
         # Get top K results with full details
         results = []
+        print(f"Top {top_k} results:")
         for doc_id, score in sorted_docs[:top_k]:
             doc_details = self.get_document_details(doc_id)
             # doc_details["score"] = score

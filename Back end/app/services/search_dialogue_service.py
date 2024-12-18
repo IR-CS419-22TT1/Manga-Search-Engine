@@ -11,7 +11,7 @@ class SearchService():
         for item in result:
             post_id = item['postId']
             text = item['sentences']
-            _, manga, page_type, page_number = post_id.split('/')
+            _, manga, page_type, page_number = post_id.split('\\')
             results.append({
                 "id": f'{manga}_{page_type}_{page_number}',
                 "manga": manga,

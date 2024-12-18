@@ -2,7 +2,7 @@ from flask_restful import Resource, reqparse
 from werkzeug.datastructures import FileStorage
 from app.services.upload_image_service import ImageService
 
-UPLOAD_FOLDER = '/tmp'
+UPLOAD_FOLDER = 'D:/Manga-Search-Engine images_received'
 UPLOAD_IMAGE_ROUTE = '/upload-image'
 
 class UploadImage(Resource):

@@ -5,6 +5,14 @@ from utils import consolidate_results
 import os
 from utils import vector_for_interactive_search
 from chromadb.utils.embedding_functions import OpenCLIPEmbeddingFunction
+import requests
+import io
+from io import BytesIO
+
+# Backend API endpoint
+BACKEND_API_URL = "http://127.0.0.1:5000/upload-image"  # Update with your backend URL
+SEARCH_SCENE_API_URL = "http://127.0.0.1:5000/search-scene"
+GET_IMAGE_API_URL = "http://127.0.0.1:5000/get-image"
 
 # Ensure the OpenCLIPEmbeddingFunction is initialized
 embedding_function = OpenCLIPEmbeddingFunction()
@@ -59,6 +67,43 @@ image_files = st.file_uploader(
     type=["jpg", "png", "jpeg"],
     accept_multiple_files=True)
 
+uploaded_paths = []
+
+# Function to upload image to the backend API
+def upload_image_to_backend(image_file):
+    try:
+        # Convert Streamlit UploadedFile to file-like object
+        file_buffer = io.BytesIO(image_file.read())
+        file_buffer.name = image_file.name  # Set the name for the file
+        files = {"file": (image_file.name, file_buffer, image_file.type)}
+        
+        # Call the API
+        response = requests.post(BACKEND_API_URL, files=files)
+        
+        # Check for success
+        if response.status_code == 201:
+            st.success(f"Image '{image_file.name}' uploaded successfully!")
+            return response.json()  # Return the backend's response (e.g., saved file path)
+        else:
+            st.error(f"Failed to upload '{image_file.name}': {response.text}")
+    except Exception as e:
+        st.error(f"Error uploading image '{image_file.name}': {e}")
+    return None
+
+# Process uploaded images
+if image_files:
+    st.write("Uploading images...")
+    
+    for image_file in image_files:
+        response = upload_image_to_backend(image_file)
+        if response:
+            uploaded_paths.append(response.get("image_path"))  # Collect the saved paths if provided
+
+    if uploaded_paths:
+        st.write("Uploaded images saved at:")
+        for path in uploaded_paths:
+            st.write(f"- {path}")
+
 # Session State Initialization
 if "results" not in st.session_state:
     st.session_state.results = []
@@ -74,6 +119,35 @@ if "query_vector" not in st.session_state:
 
 if "only_one_image_no_text" not in st.session_state:
     st.session_state.only_one_image_no_text = False
+
+# Function to call the search-scene API
+def call_search_scene_api(image_paths, text_inputs, top_k):
+    payload = {
+        "image_path": image_paths,
+        "text": text_inputs,
+        "top_k": top_k
+    }
+    try:
+        response = requests.post(SEARCH_SCENE_API_URL, json=payload)
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            st.error(f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        st.error(f"Failed to call API: {e}")
+    return []
+
+# Function to fetch an image from the backend
+def fetch_image_from_backend(image_path):
+    try:
+        response = requests.get(f"{GET_IMAGE_API_URL}/{image_path}", stream=True)
+        if response.status_code == 200:
+            return Image.open(BytesIO(response.content))
+        else:
+            st.error(f"Failed to fetch image: {response.status_code}")
+    except Exception as e:
+        st.error(f"Error fetching image: {e}")
+    return None
 
 if st.button("Search"):
     results = {}
@@ -133,295 +207,313 @@ if st.button("Search"):
     else:
         st.session_state.only_one_image_no_text = False
             
-    if any(st.session_state.text_inputs) and not st.session_state.only_one_image_no_text:
-        # Combine all text inputs into a single string using generative AI
-        gathered_text = " ".join([t for t in st.session_state.text_inputs if t])
-        # Update system and user content for the generative model
-        system_content = """
-        You are an assistant specializing in combining search phrases. Your task is to interpret multiple related phrases, focusing on identifying key subjects(e.g., names of characters, objects), relationships, and actions. The combined query must be concise, relevant, and meaningful for searching databases.
-        """
+    # if any(st.session_state.text_inputs) and not st.session_state.only_one_image_no_text:
+    #     # Combine all text inputs into a single string using generative AI
+    #     gathered_text = " ".join([t for t in st.session_state.text_inputs if t])
+    #     # Update system and user content for the generative model
+    #     system_content = """
+    #     You are an assistant specializing in combining search phrases. Your task is to interpret multiple related phrases, focusing on identifying key subjects(e.g., names of characters, objects), relationships, and actions. The combined query must be concise, relevant, and meaningful for searching databases.
+    #     """
         
-        user_content = f"""
-        Combine the following search phrases into a single, meaningful query that clearly conveys the names of characters, relationships and actions described:
-        {gathered_text}
-        """
-        # Generate consolidated query using generative AI
-        try:
-            client_kwargs = {
-                "model_name": model_name,
-                "generation_config": {
-                    "temperature": 0.7,
-                },
-                "system_instruction": system_content,
-            }
-            client = st.session_state.client_factory.create_client('google', **client_kwargs)
+    #     user_content = f"""
+    #     Combine the following search phrases into a single, meaningful query that clearly conveys the names of characters, relationships and actions described:
+    #     {gathered_text}
+    #     """
+    #     # Generate consolidated query using generative AI
+    #     try:
+    #         client_kwargs = {
+    #             "model_name": model_name,
+    #             "generation_config": {
+    #                 "temperature": 0.7,
+    #             },
+    #             "system_instruction": system_content,
+    #         }
+    #         client = st.session_state.client_factory.create_client('google', **client_kwargs)
 
-            response = client.generate_content(user_content)
-            consolidated_query = response.text.strip()
-            st.write(f"Consolidated Query: {consolidated_query}")  # Display the combined query for debugging
+    #         response = client.generate_content(user_content)
+    #         consolidated_query = response.text.strip()
+    #         st.write(f"Consolidated Query: {consolidated_query}")  # Display the combined query for debugging
 
-            # Update text caption for the consolidated query
-            text_caption = consolidated_query
+    #         # Update text caption for the consolidated query
+    #         text_caption = consolidated_query
 
-        except Exception as e:
-            st.error(f"Error consolidating text inputs: {e}")
+    #     except Exception as e:
+    #         st.error(f"Error consolidating text inputs: {e}")
     
-    if any(image_files) and not st.session_state.only_one_image_no_text:
-        gathered_images = []
-        for image in image_files:
-            if image:
-                try:
-                    img = Image.open(image).convert("RGB")  # Keep the image as PIL format
-                    gathered_images.append(img)
-                except Exception as e:
-                    st.error(f"Error processing image {image.name}: {e}")
-        if gathered_images:
-            try:
-                # Define the updated system content for generating individual descriptions
-                system_content_individual = """
-                You are an assistant specializing in analyzing images. Your task is to generate a concise caption for the given image. Focus on identifying key subjects (e.g., names of characters, objects), their appearance, and their context. Avoid unnecessary details that do not contribute to understanding the main subject or action.
-                """
+    # if any(image_files) and not st.session_state.only_one_image_no_text:
+    #     gathered_images = []
+    #     for image in image_files:
+    #         if image:
+    #             try:
+    #                 img = Image.open(image).convert("RGB")  # Keep the image as PIL format
+    #                 gathered_images.append(img)
+    #             except Exception as e:
+    #                 st.error(f"Error processing image {image.name}: {e}")
+    #     if gathered_images:
+    #         try:
+    #             # Define the updated system content for generating individual descriptions
+    #             system_content_individual = """
+    #             You are an assistant specializing in analyzing images. Your task is to generate a concise caption for the given image. Focus on identifying key subjects (e.g., names of characters, objects), their appearance, and their context. Avoid unnecessary details that do not contribute to understanding the main subject or action.
+    #             """
                 
-                # Define the updated system content for consolidating the descriptions
-                system_content_combined = """
-                You are an assistant specializing in combining image captions. Your task is to consolidate multiple related captions into a single, coherent caption. Focus on identifying the common themes, key characters, names of characters, their actions, and their relationships. The final caption should be concise, descriptive, and suitable for searching databases.
-                """
+    #             # Define the updated system content for consolidating the descriptions
+    #             system_content_combined = """
+    #             You are an assistant specializing in combining image captions. Your task is to consolidate multiple related captions into a single, coherent caption. Focus on identifying the common themes, key characters, names of characters, their actions, and their relationships. The final caption should be concise, descriptive, and suitable for searching databases.
+    #             """
 
-                # Step 1: Generate individual image descriptions
-                individual_descriptions = []
-                for img in gathered_images:
-                    client_kwargs_individual = {
-                        "model_name": model_name,
-                        "generation_config": {
-                            "temperature": 0.7,
-                        },
-                        "system_instruction": system_content_individual,
-                    }
-                    client_individual = st.session_state.client_factory.create_client('google', **client_kwargs_individual)
+    #             # Step 1: Generate individual image descriptions
+    #             individual_descriptions = []
+    #             for img in gathered_images:
+    #                 client_kwargs_individual = {
+    #                     "model_name": model_name,
+    #                     "generation_config": {
+    #                         "temperature": 0.7,
+    #                     },
+    #                     "system_instruction": system_content_individual,
+    #                 }
+    #                 client_individual = st.session_state.client_factory.create_client('google', **client_kwargs_individual)
 
-                    user_content_individual = "Generate a concise caption for the following image, focusing on key subjects, names of characters, their appearance, and the context."
-                    response = client_individual.generate_content([user_content_individual, img], stream=True)
-                    response.resolve()
-                    description = response.text.strip()
-                    individual_descriptions.append(description)
+    #                 user_content_individual = "Generate a concise caption for the following image, focusing on key subjects, names of characters, their appearance, and the context."
+    #                 response = client_individual.generate_content([user_content_individual, img], stream=True)
+    #                 response.resolve()
+    #                 description = response.text.strip()
+    #                 individual_descriptions.append(description)
 
-                # Step 2: Consolidate individual descriptions into a single caption
-                client_kwargs_combined = {
-                    "model_name": model_name,
-                    "generation_config": {
-                        "temperature": 0.7,
-                    },
-                    "system_instruction": system_content_combined,
-                }
-                client_combined = st.session_state.client_factory.create_client('google', **client_kwargs_combined)
+    #             # Step 2: Consolidate individual descriptions into a single caption
+    #             client_kwargs_combined = {
+    #                 "model_name": model_name,
+    #                 "generation_config": {
+    #                     "temperature": 0.7,
+    #                 },
+    #                 "system_instruction": system_content_combined,
+    #             }
+    #             client_combined = st.session_state.client_factory.create_client('google', **client_kwargs_combined)
 
-                user_content_combined = f"""
-                Combine the following captions into a single, meaningful caption, focusing on common themes, key characters, names of characters, their actions, and relationships:
-                {'. '.join(individual_descriptions)}
-                """
-                response_combined = client_combined.generate_content(user_content_combined, stream=True)
-                response_combined.resolve()
-                consolidated_caption = response_combined.text.strip()
-                st.write(f"Consolidated Caption: {consolidated_caption}")  # Display the caption for debugging
+    #             user_content_combined = f"""
+    #             Combine the following captions into a single, meaningful caption, focusing on common themes, key characters, names of characters, their actions, and relationships:
+    #             {'. '.join(individual_descriptions)}
+    #             """
+    #             response_combined = client_combined.generate_content(user_content_combined, stream=True)
+    #             response_combined.resolve()
+    #             consolidated_caption = response_combined.text.strip()
+    #             st.write(f"Consolidated Caption: {consolidated_caption}")  # Display the caption for debugging
 
-                # Update image caption for the consolidated caption
-                image_caption = consolidated_caption
+    #             # Update image caption for the consolidated caption
+    #             image_caption = consolidated_caption
 
-            except Exception as e:
-                st.error(f"Error consolidating image inputs: {e}")
+    #         except Exception as e:
+    #             st.error(f"Error consolidating image inputs: {e}")
 
-    # Combine text and image captions if both exist
-    if text_caption and image_caption:
-        try:
-            system_content_combine = """
-            You are an assistant specializing in combining textual descriptions and image analyses. Your task is to take a textual query and an image caption, identify the key characters, names of characters and their relationships, and generate a single, meaningful caption. Focus on interpreting the intent of the text query and linking it with the image subject to create a relevant and concise description for searching databases.
-            """
+    # # Combine text and image captions if both exist
+    # if text_caption and image_caption:
+    #     try:
+    #         system_content_combine = """
+    #         You are an assistant specializing in combining textual descriptions and image analyses. Your task is to take a textual query and an image caption, identify the key characters, names of characters and their relationships, and generate a single, meaningful caption. Focus on interpreting the intent of the text query and linking it with the image subject to create a relevant and concise description for searching databases.
+    #         """
             
-            user_content_combine = f"""
-            Combine the following textual query and image caption into a single, meaningful caption. Focus on identifying key characters, names of characters, their actions, and relationships:
-            Text Query: {text_caption}
-            Image Caption: {image_caption}
-            """
+    #         user_content_combine = f"""
+    #         Combine the following textual query and image caption into a single, meaningful caption. Focus on identifying key characters, names of characters, their actions, and relationships:
+    #         Text Query: {text_caption}
+    #         Image Caption: {image_caption}
+    #         """
 
-            client_kwargs_combine = {
-                "model_name": model_name,
-                "generation_config": {
-                    "temperature": 0.7,
-                },
-                "system_instruction": system_content_combine,
-            }
-            client_combine = st.session_state.client_factory.create_client('google', **client_kwargs_combine)
+    #         client_kwargs_combine = {
+    #             "model_name": model_name,
+    #             "generation_config": {
+    #                 "temperature": 0.7,
+    #             },
+    #             "system_instruction": system_content_combine,
+    #         }
+    #         client_combine = st.session_state.client_factory.create_client('google', **client_kwargs_combine)
 
-            response_combine = client_combine.generate_content(user_content_combine, stream=True)
-            response_combine.resolve()
-            final_caption = response_combine.text.strip()
-            st.write(f"Final Caption: {final_caption}")  # Display the final caption for debugging
-        except Exception as e:
-            st.error(f"Error combining text and image captions: {e}")
-    elif text_caption:
-        final_caption = text_caption
-    elif image_caption:
-        final_caption = image_caption
+    #         response_combine = client_combine.generate_content(user_content_combine, stream=True)
+    #         response_combine.resolve()
+    #         final_caption = response_combine.text.strip()
+    #         st.write(f"Final Caption: {final_caption}")  # Display the final caption for debugging
+    #     except Exception as e:
+    #         st.error(f"Error combining text and image captions: {e}")
+    # elif text_caption:
+    #     final_caption = text_caption
+    # elif image_caption:
+    #     final_caption = image_caption
     
-    # Query the database using the final caption
-    if final_caption:
-        try:
-            # Generate embedding for the final_caption text
-            final_caption_embedding = embedding_function([final_caption])  # Pass as a list
-            # Store the query vector in session state
-            st.session_state.query_vector = final_caption_embedding
-        except Exception as e:
-            st.error(f"Error generating embedding for final_caption: {e}")
-        # Query both databases using the final caption
-        results_visual = st.session_state.visual_collection.query(query_texts=[final_caption], n_results=10, include=["distances", "embeddings"])
-        results_caption = st.session_state.caption_collection.query(query_texts=[final_caption], n_results=10, include=["distances", "embeddings"])
+    # # Query the database using the final caption
+    # if final_caption:
+    #     try:
+    #         # Generate embedding for the final_caption text
+    #         final_caption_embedding = embedding_function([final_caption])  # Pass as a list
+    #         # Store the query vector in session state
+    #         st.session_state.query_vector = final_caption_embedding
+    #     except Exception as e:
+    #         st.error(f"Error generating embedding for final_caption: {e}")
+    #     # Query both databases using the final caption
+    #     results_visual = st.session_state.visual_collection.query(query_texts=[final_caption], n_results=10, include=["distances", "embeddings"])
+    #     results_caption = st.session_state.caption_collection.query(query_texts=[final_caption], n_results=10, include=["distances", "embeddings"])
 
-        # Consolidate and rank the results
-        consolidated_results = consolidate_results(results_visual, results_caption)
-        results = consolidated_results
-    # Display results
-    if results:
-        # Store results in session state
-        st.session_state.results = results
-        st.session_state.selected_images = [False] * len(results)
-        st.session_state.refine_results = False
-        only_one_image_no_text = False
+    #     # Consolidate and rank the results
+    #     consolidated_results = consolidate_results(results_visual, results_caption)
+    #     results = consolidated_results
+    # # Display results
+    # if results:
+    #     # Store results in session state
+    #     st.session_state.results = results
+    #     st.session_state.selected_images = [False] * len(results)
+    #     st.session_state.refine_results = False
+    #     only_one_image_no_text = False
+        # Call the search-scene API
+    if not st.session_state.only_one_image_no_text:
+        results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
+        # Display results
+        if results:
+            st.subheader("Search Results")
+            columns_per_row = 3
+            for row_start in range(0, len(results), columns_per_row):
+                cols = st.columns(columns_per_row)
+                for col, result in zip(cols, results[row_start:row_start + columns_per_row]):
+                    image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
+                    image = fetch_image_from_backend(image_path)
 
-# Display Results
-if "results" in st.session_state and st.session_state.results:
-    # Header with "Refine Results" button
-    col_subheader, col_button = st.columns([3, 1])
-    with col_subheader:
-        st.subheader("Top 10 Results")
-    with col_button:
-        # Enable "Refine Results" only if checkboxes are selected
-        if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(st.session_state.results):
-            st.session_state.selected_images = [False] * len(st.session_state.results)
+                    with col:
+                        if image:
+                            st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")
+        else:
+            st.warning("No results found.")
 
-        refine_disabled = not any(st.session_state.selected_images)
-        st.session_state.refine_results = not refine_disabled
+# # Display Results
+# if "results" in st.session_state and st.session_state.results:
+#     # Header with "Refine Results" button
+#     col_subheader, col_button = st.columns([3, 1])
+#     with col_subheader:
+#         st.subheader("Top 10 Results")
+#     with col_button:
+#         # Enable "Refine Results" only if checkboxes are selected
+#         if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(st.session_state.results):
+#             st.session_state.selected_images = [False] * len(st.session_state.results)
+
+#         refine_disabled = not any(st.session_state.selected_images)
+#         st.session_state.refine_results = not refine_disabled
         
-        # Refine Results Button Logic
-        if st.button("Refine Results", disabled=not st.session_state.refine_results):
-            print('state of images: ', st.session_state.selected_images)
-            try:
-                results = st.session_state.results
+#         # Refine Results Button Logic
+#         if st.button("Refine Results", disabled=not st.session_state.refine_results):
+#             print('state of images: ', st.session_state.selected_images)
+#             try:
+#                 results = st.session_state.results
 
-                # Extract the embedding vector for the final caption
-                final_caption_embedding = st.session_state.query_vector
+#                 # Extract the embedding vector for the final caption
+#                 final_caption_embedding = st.session_state.query_vector
 
-                # Ensure the embedding is a plain list of floats
-                if isinstance(final_caption_embedding, list) and isinstance(final_caption_embedding[0], np.ndarray):
-                    final_caption_embedding = final_caption_embedding[0].tolist()  # Flatten
-                elif isinstance(final_caption_embedding, np.ndarray):
-                    final_caption_embedding = final_caption_embedding.tolist()
-                else:
-                    st.error("Unexpected embedding format")
-                    st.stop()
+#                 # Ensure the embedding is a plain list of floats
+#                 if isinstance(final_caption_embedding, list) and isinstance(final_caption_embedding[0], np.ndarray):
+#                     final_caption_embedding = final_caption_embedding[0].tolist()  # Flatten
+#                 elif isinstance(final_caption_embedding, np.ndarray):
+#                     final_caption_embedding = final_caption_embedding.tolist()
+#                 else:
+#                     st.error("Unexpected embedding format")
+#                     st.stop()
 
-                # Convert to numpy array for further calculations
-                initial_query_vector = np.array(final_caption_embedding)
+#                 # Convert to numpy array for further calculations
+#                 initial_query_vector = np.array(final_caption_embedding)
 
-                # Collect positive (unticked) and negative (ticked) vectors
-                positive_vectors = []
-                negative_vectors = []  # Collect all negative vectors
+#                 # Collect positive (unticked) and negative (ticked) vectors
+#                 positive_vectors = []
+#                 negative_vectors = []  # Collect all negative vectors
 
-                for idx, (res_id, is_negative) in enumerate(zip(results.keys(), st.session_state.selected_images)):
-                    distance, embedding = results[res_id]  # Extract distance and embedding
+#                 for idx, (res_id, is_negative) in enumerate(zip(results.keys(), st.session_state.selected_images)):
+#                     distance, embedding = results[res_id]  # Extract distance and embedding
 
-                    # Convert embedding to numpy array
-                    embedding = np.array(embedding)
+#                     # Convert embedding to numpy array
+#                     embedding = np.array(embedding)
 
-                    if is_negative:  # Negative images (ticked)
-                        negative_vectors.append(embedding)
-                    else:  # Positive images (unticked)
-                        positive_vectors.append(embedding)
+#                     if is_negative:  # Negative images (ticked)
+#                         negative_vectors.append(embedding)
+#                     else:  # Positive images (unticked)
+#                         positive_vectors.append(embedding)
 
-                # Ensure we have at least one valid negative vector
-                if not negative_vectors:
-                    st.error("No negative images selected. Please select at least one negative image.")
-                    st.stop()
+#                 # Ensure we have at least one valid negative vector
+#                 if not negative_vectors:
+#                     st.error("No negative images selected. Please select at least one negative image.")
+#                     st.stop()
 
-                # Calculate the refined query vector using the interactive search function
-                new_query_vector = vector_for_interactive_search(
-                    initial_query=initial_query_vector,
-                    positive_vectors=positive_vectors,
-                    negative_vectors=negative_vectors
-                )
+#                 # Calculate the refined query vector using the interactive search function
+#                 new_query_vector = vector_for_interactive_search(
+#                     initial_query=initial_query_vector,
+#                     positive_vectors=positive_vectors,
+#                     negative_vectors=negative_vectors
+#                 )
 
-                results_visual = None
-                results_caption = None
+#                 results_visual = None
+#                 results_caption = None
 
-                if st.session_state.only_one_image_no_text:
-                    image = image_files[0]
-                    img = Image.open(image).convert("RGB")
-                    img_array = np.array(img)
-                    # Query the collections
-                    results_visual = st.session_state.visual_collection.query(
-                        query_images=[img_array], 
-                        n_results=10, 
-                        include=["distances", "embeddings"]
-                    )
+#                 if st.session_state.only_one_image_no_text:
+#                     image = image_files[0]
+#                     img = Image.open(image).convert("RGB")
+#                     img_array = np.array(img)
+#                     # Query the collections
+#                     results_visual = st.session_state.visual_collection.query(
+#                         query_images=[img_array], 
+#                         n_results=10, 
+#                         include=["distances", "embeddings"]
+#                     )
 
-                    results_caption = st.session_state.caption_collection.query(
-                        query_embeddings=[new_query_vector.tolist()],
-                        n_results=10,
-                        include=["distances", "embeddings"]
-                    )
-                else:
-                    # Query both databases with the refined query vector
-                    results_visual = st.session_state.visual_collection.query(
-                        query_embeddings=[new_query_vector.tolist()],  # Convert back to list
-                        n_results=10,
-                        include=["distances", "embeddings"]
-                    )
+#                     results_caption = st.session_state.caption_collection.query(
+#                         query_embeddings=[new_query_vector.tolist()],
+#                         n_results=10,
+#                         include=["distances", "embeddings"]
+#                     )
+#                 else:
+#                     # Query both databases with the refined query vector
+#                     results_visual = st.session_state.visual_collection.query(
+#                         query_embeddings=[new_query_vector.tolist()],  # Convert back to list
+#                         n_results=10,
+#                         include=["distances", "embeddings"]
+#                     )
 
-                    results_caption = st.session_state.caption_collection.query(
-                        query_embeddings=[new_query_vector.tolist()],
-                        n_results=10,
-                        include=["distances", "embeddings"]
-                    )
+#                     results_caption = st.session_state.caption_collection.query(
+#                         query_embeddings=[new_query_vector.tolist()],
+#                         n_results=10,
+#                         include=["distances", "embeddings"]
+#                     )
 
-                # Consolidate results from both queries
-                consolidated_results = consolidate_results(results_visual, results_caption)
+#                 # Consolidate results from both queries
+#                 consolidated_results = consolidate_results(results_visual, results_caption)
 
-                # Update session state with consolidated results
-                st.session_state.results = consolidated_results
-                st.session_state.selected_images = [False] * len(consolidated_results)
-                st.session_state.refine_results = False
-                st.session_state.query_vector = new_query_vector  # Update the query vector
+#                 # Update session state with consolidated results
+#                 st.session_state.results = consolidated_results
+#                 st.session_state.selected_images = [False] * len(consolidated_results)
+#                 st.session_state.refine_results = False
+#                 st.session_state.query_vector = new_query_vector  # Update the query vector
 
-                st.success("Results refined successfully!")
+#                 st.success("Results refined successfully!")
 
-            except Exception as e:
-                st.error(f"Error refining results: {e}")
+#             except Exception as e:
+#                 st.error(f"Error refining results: {e}")
 
-    # Display results with checkboxes
-    columns_per_row = 3
-    result_ids = list(st.session_state.results.keys())  # Extract result IDs
+#     # Display results with checkboxes
+#     columns_per_row = 3
+#     result_ids = list(st.session_state.results.keys())  # Extract result IDs
 
-    for row_start in range(0, len(result_ids), columns_per_row):
-        cols = st.columns(columns_per_row)
-        for idx, col in enumerate(cols):
-            result_idx = row_start + idx
-            if result_idx >= len(result_ids):
-                break  # Exit loop if there are no more results
+#     for row_start in range(0, len(result_ids), columns_per_row):
+#         cols = st.columns(columns_per_row)
+#         for idx, col in enumerate(cols):
+#             result_idx = row_start + idx
+#             if result_idx >= len(result_ids):
+#                 break  # Exit loop if there are no more results
 
-            res_id = result_ids[result_idx]
-            dist, _ = st.session_state.results[res_id]  # Extract distance and embedding
+#             res_id = result_ids[result_idx]
+#             dist, _ = st.session_state.results[res_id]  # Extract distance and embedding
 
-            # Generate the image path based on the result ID
-            image_path = res_id.replace("caption", "dataset").replace("txt", "png").replace("_", "/")
-            image_path = "./" + image_path
+#             # Generate the image path based on the result ID
+#             image_path = res_id.replace("caption", "dataset").replace("txt", "png").replace("_", "/")
+#             image_path = "./" + image_path
 
-            with col:
-                # Checkbox for image selection
-                selected = st.checkbox(
-                    "Select",
-                    key=f"checkbox_{result_idx}",
-                    value=st.session_state.selected_images[result_idx]
-                )
-                st.session_state.selected_images[result_idx] = selected
+#             with col:
+#                 # Checkbox for image selection
+#                 selected = st.checkbox(
+#                     "Select",
+#                     key=f"checkbox_{result_idx}",
+#                     value=st.session_state.selected_images[result_idx]
+#                 )
+#                 st.session_state.selected_images[result_idx] = selected
 
-                # Display image with the distance caption
-                st.image(image_path, caption=f"{os.path.basename(image_path)} (Distance: {dist:.4f})")
+#                 # Display image with the distance caption
+#                 st.image(image_path, caption=f"{os.path.basename(image_path)} (Distance: {dist:.4f})")

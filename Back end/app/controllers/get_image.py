@@ -4,22 +4,21 @@ from app.services.upload_image_service import ImageService
 import os
 from werkzeug.utils import safe_join
 
-UPLOAD_FOLDER = '/tmp'
-GET_IMAGE_ROUTE = '/get-image/<string:filename>'
+DATASET_FOLDER = 'D:/dataset'
+GET_IMAGE_ROUTE = '/get-image/<path:filename>'
 
 class GetImage(Resource):
     def __init__(self):
-        self.image_service = ImageService(UPLOAD_FOLDER)
+        self.image_service = ImageService(DATASET_FOLDER)
 
     def get(self, filename):
         if self.image_service.image_exists(filename):
             print(f'Image found: {filename}')
-            path = safe_join(os.fspath(UPLOAD_FOLDER), os.fspath(filename))
+            path = safe_join(os.fspath(DATASET_FOLDER), os.fspath(filename))
             print(f'Path: {path}')
-            return send_from_directory(UPLOAD_FOLDER, filename)
+            return send_from_directory(DATASET_FOLDER, filename)
         else:
             return {'message': 'Image not found'}, 404
         
-
 # For testing:
 # curl http://localhost:5000/get-image/your-image.jpg --output your-image.jpg

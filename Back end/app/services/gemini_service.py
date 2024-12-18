@@ -7,7 +7,7 @@ import time
 class GeminiPrompt:
     class SystemContent:
         image_caption = """
-        You are an assistant specializing in analyzing images. You task is to generate a concise caption for the given image. Focus
+        You are an assistant specializing in analyzing images. Your task is to generate a concise caption for the given image. Focus on identifying key subjects (e.g., names of characters, objects), their appearance, and their context. Avoid unnecessary details that do not contribute to understanding the main subject or action.
         """
         combine_search_phrases = """
         You are an assistant specializing in combining search phrases. Your task is to interpret multiple related phrases, focusing on identifying key subjects(e.g., names of characters, objects), relationships, and actions. The combined query must be concise, relevant, and meaningful for searching databases.
