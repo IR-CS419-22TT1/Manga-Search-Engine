@@ -58,7 +58,7 @@ Analyze this comic image and provide a detailed caption. Identify the names of t
 """
 
 # Paths for input and output folders
-input_folder = '../Manga-Retrieval/dataset/blackclover/grayscale/'
+input_folder = './dataset/blackclover/grayscale/'
 output_folder = './caption/blackclover/grayscale/'
 
 # Ensure output folder exists
