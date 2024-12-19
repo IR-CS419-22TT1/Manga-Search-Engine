@@ -1,10 +1,7 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-from utils import consolidate_results
 import os
-from utils import vector_for_interactive_search
-from chromadb.utils.embedding_functions import OpenCLIPEmbeddingFunction
 import requests
 import io
 from io import BytesIO
@@ -13,9 +10,6 @@ from io import BytesIO
 BACKEND_API_URL = "http://127.0.0.1:5000/upload-image"  # Update with your backend URL
 SEARCH_SCENE_API_URL = "http://127.0.0.1:5000/search-scene"
 GET_IMAGE_API_URL = "http://127.0.0.1:5000/get-image"
-
-# Ensure the OpenCLIPEmbeddingFunction is initialized
-embedding_function = OpenCLIPEmbeddingFunction()
 
 # Check for API key
 if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:

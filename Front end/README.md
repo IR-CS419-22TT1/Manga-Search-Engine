@@ -16,3 +16,8 @@ system_content = """You are an expert in analyzing images from One Piece Manga C
 4. Change the input_folder to folder containing comic images needed creating caption
 5. Change the output_folder to corresponding output folder
 6. Run captioning.py
+
+# Run front-end:
+1. Install necessary packages in your virtual environment
+2. In folder "Front end", create file .env containing the line GEMINI_API_KEY="AIzaSyAJmgIA-h6gBBqeEdSy1fUro-9HzAgu_i8" (you can change the value of the key by your own)
+3. Run main.py
