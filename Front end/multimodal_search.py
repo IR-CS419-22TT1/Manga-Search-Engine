@@ -22,9 +22,15 @@ model_name = "gemini-1.5-flash"
 
 col1, col2 = st.columns([1, 3]) 
 with col1:
-    st.image('./assets/app_logo.png', width=200)
+    st.image('./assets/app_logo3.png', width=200)
 with col2:
-    st.title("Multimodal Scene Search")
+    row1, row2, row3 = st.columns(1), st.columns(1), st.columns(1)
+    with row1[0]:
+        st.empty()  # Leave the first row empty
+    with row2[0]:
+        st.empty()  # Leave the third row empty
+    with row3[0]:
+        st.title("Multimodal Scene Search")  # Add the title to the second row
 
 st.info("Type **descriptions** or upload **images** you want to search 💖")
 with open('./style.css') as f:
