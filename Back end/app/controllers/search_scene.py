@@ -22,7 +22,7 @@ class SearchScene(Resource):
         print(len(text), text)
         
         # Handle case where text is a list containing an empty string
-        if len(text) == 1 and text[0] == '':
+        if len(text) == 0 or (len(text) == 1 and text[0] == ''):
             text = []
             if len(image_path) == 1:
                 print('only one image no text')
