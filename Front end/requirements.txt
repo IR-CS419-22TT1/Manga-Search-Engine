@@ -1,3 +1,6 @@
 pillow
 google-generativeai
 python-dotenv
+streamlit
+nltk
+open-clip-torch
