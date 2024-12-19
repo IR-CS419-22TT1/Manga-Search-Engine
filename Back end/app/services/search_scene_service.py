@@ -31,6 +31,10 @@ class SearchSceneService():
 
         # return self.chromadb_service.get_result(combined_text_and_captions, top_k)
         return self.format_result(self.chromadb_service.get_result(combined_text_and_captions, top_k))
+    
+    def get_result_one_image_no_text(self, image_path, text, top_k):
+        image_captions = self.gemini_service.generate_caption(image_path[0])
+        return self.format_result(self.chromadb_service.get_result_one_image_no_text(image_path[0], image_captions, top_k))
 
 
 

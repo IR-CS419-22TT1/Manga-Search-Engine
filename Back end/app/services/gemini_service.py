@@ -122,4 +122,3 @@ class GeminiService:
         response.resolve()
         time.sleep(0.5)
         return response.text.strip()
-

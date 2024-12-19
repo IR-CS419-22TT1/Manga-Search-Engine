@@ -2,6 +2,8 @@ import chromadb
 from chromadb.utils.embedding_functions import OpenCLIPEmbeddingFunction
 from chromadb.utils.data_loaders import ImageLoader
 from app.main.settings import Config
+from PIL import Image
+import numpy as np
 
 class ChromaDBService:
     def __init__(self):
@@ -31,6 +33,19 @@ class ChromaDBService:
     def get_result(self, caption, top_k):
         results_visual = self.visual_collection.query(query_texts=[caption], n_results=top_k, include=['distances'])
         results_caption = self.caption_collection.query(query_texts=[caption], n_results=top_k, include=['distances'])
+
+        return consolidate_results(results_visual, results_caption, top_k)
+    
+    def get_result_one_image_no_text(self, image_path, image_captions, top_k):
+        # Open and process the image to convert it into an array
+        img = Image.open(image_path).convert("RGB")
+        img_array = np.array(img)
+        
+        print('Image array shape:', img_array.shape)
+
+        # Pass the image array to the query method
+        results_visual = self.visual_collection.query(query_images=[img_array], n_results=top_k, include=['distances'])
+        results_caption = self.caption_collection.query(query_texts=image_captions, n_results=top_k, include=['distances'])
 
         return consolidate_results(results_visual, results_caption, top_k)
     
