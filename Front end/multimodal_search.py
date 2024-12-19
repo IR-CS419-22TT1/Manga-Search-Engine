@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import numpy as np
 from PIL import Image
@@ -13,25 +14,17 @@ GET_IMAGE_API_URL = "http://127.0.0.1:5000/get-image"
 
 # Check for API key
 if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
-    st.sidebar.success("✅ API Key is entered!")
+    st.sidebar.success("✅ API Key is provided!")
 else:
     st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
     
 model_name = "gemini-1.5-flash"
 
-col1, col2 = st.columns([1, 3])  # Adjust column width ratios as needed
-# Add the image in the first column
+col1, col2 = st.columns([1, 3]) 
 with col1:
     st.image('./assets/app_logo.png', width=200)
-# Divide col2 into three rows
 with col2:
-    row1, row2, row3 = st.columns(1), st.columns(1), st.columns(1)
-    with row1[0]:
-        st.empty()  # Leave the first row empty
-    with row2[0]:
-        st.empty()  # Leave the third row empty
-    with row3[0]:
-        st.title("Multimodal Scene Search")  # Add the title to the second row
+    st.title("Multimodal Scene Search")
 
 st.info("Type **descriptions** or upload **images** you want to search 💖")
 with open('./style.css') as f:
@@ -42,18 +35,27 @@ st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)\
 if "text_inputs" not in st.session_state:
     st.session_state.text_inputs = [""]
 
-def add_text_input():
+def add_description():
     st.session_state.text_inputs.append("")
 
-# Search bar
+def delete_description(index):
+    if 0 <= index < len(st.session_state.text_inputs):
+        st.session_state.text_inputs.pop(index)
+
+# Render all text input fields dynamically with delete buttons
 for i, text_input in enumerate(st.session_state.text_inputs):
-    st.session_state.text_inputs[i] = st.text_input(
-        label=f"Description {i+1}", 
-        value=text_input, 
-        key=f"description_{i+1}")
-    
-if st.button("Add description"):
-    add_text_input()
+    cols = st.columns([10, 1])  # Create two columns for text field and delete button
+    with cols[0]:
+        st.session_state.text_inputs[i] = st.text_input(
+            label=f"Description {i+1}",
+            key=f"description_{i+1}"
+        )
+    with cols[1]:
+        # Use a button for deleting, uniquely keyed
+        if st.button("🗑️", key=f"delete_{i}", on_click=delete_description, args=(i,)):
+            pass
+
+st.button("Add description", on_click=add_description)
 
 # Image uploader
 image_files = st.file_uploader(
@@ -104,10 +106,8 @@ if "refine_results" not in st.session_state:
 if "query_vector" not in st.session_state:
     st.session_state.query_vector = None
 
-if "only_one_image_no_text" not in st.session_state:
-    st.session_state.only_one_image_no_text = False
-
 # Function to call the search-scene API
+@st.cache_resource
 def call_search_scene_api(image_paths, text_inputs, top_k):
     payload = {
         "image_path": image_paths,
@@ -125,6 +125,7 @@ def call_search_scene_api(image_paths, text_inputs, top_k):
     return []
 
 # Function to fetch an image from the backend
+@st.cache_resource
 def fetch_image_from_backend(image_path):
     try:
         response = requests.get(f"{GET_IMAGE_API_URL}/{image_path}", stream=True)
@@ -145,8 +146,9 @@ if st.button("Search"):
     # Case 1: Only 1 image is uploaded and no text input
     if len(image_files) == 1 and not any(st.session_state.text_inputs):
         # st.write('Case only one image no text', uploaded_paths)
-        st.session_state.only_one_image_no_text = True
+        start = time.time()
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
+        st.write(f"Search took {time.time() - start} seconds.")
         # Display results
         if results:
             st.subheader("Search Results")
@@ -163,11 +165,10 @@ if st.button("Search"):
         else:
             st.warning("No results found.")
     else:
-        st.session_state.only_one_image_no_text = False
-            
-    if not st.session_state.only_one_image_no_text:
         # st.write('Case multiple images or text', st.session_state.text_inputs)
+        start = time.time()
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
+        st.write(f"Search took {time.time() - start} seconds.")
         # Display results
         if results:
             st.subheader("Search Results")

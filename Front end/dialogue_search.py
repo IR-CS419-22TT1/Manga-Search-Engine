@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import os
 import requests
@@ -11,26 +12,18 @@ GET_IMAGE_API = "http://127.0.0.1:5000/get-image"
 
 # Check for API key
 if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
-    st.sidebar.success("✅ API Key is entered!")
+    st.sidebar.success("✅ API Key is provided!")
 else:
     st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
 
-# Page content
-col1, col2 = st.columns([1, 3])  # Adjust column width ratios as needed
-# Add the image in the first column
+col1, col2 = st.columns([1, 3])
 with col1:
     st.image('./assets/app_logo.png', width=200)
-# Divide col2 into three rows
 with col2:
-    row1, row2, row3 = st.columns(1), st.columns(1), st.columns(1)
-    with row1[0]:
-        st.empty()  # Leave the first row empty
-    with row2[0]:
-        st.empty()  # Leave the third row empty
-    with row3[0]:
-        st.title("💬 Dialogue Search")  # Add the title to the second row
+    st.title("💬 Dialogue Search")
 
 st.info("Type a **dialogue** you want to search or pick one of these suggestions:")
+
 
 # Suggestions for quick search
 suggestions = [
@@ -41,7 +34,6 @@ suggestions = [
 
 # Layout: Suggestion boxes
 cols = st.columns(len(suggestions))  # Creates dynamic columns for each suggestion
-st.session_state.chosen_suggestion = ""
 
 # Handle clicks on suggestions
 for idx, suggestion in enumerate(suggestions):
@@ -50,11 +42,10 @@ for idx, suggestion in enumerate(suggestions):
             st.session_state.chosen_suggestion = suggestion
 
 # Search bar
-query = st.text_input(
-    label="Dialogue:", value=st.session_state.chosen_suggestion
-)
+query = st.text_input("Dialogue:", value=st.session_state.get("chosen_suggestion", ""))
 
 # Function to call the backend API
+@st.cache_resource
 def search_dialogue_api(query, top_k=10):
     try:
         payload = {"text": query, "top_k": top_k}
@@ -70,6 +61,7 @@ def search_dialogue_api(query, top_k=10):
         return []
 
 # Function to fetch an image from the backend
+@st.cache_resource
 def fetch_image_from_backend(image_path):
     try:
         response = requests.get(f"{GET_IMAGE_API}/{image_path}", stream=True)
@@ -83,12 +75,13 @@ def fetch_image_from_backend(image_path):
     return None
 
 # Search button logic
-if st.button("Search") or st.session_state.chosen_suggestion:
+if st.button("Search") or st.session_state.get("chosen_suggestion"):
     if query:
         st.session_state.chosen_suggestion = query
-
+        start = time.time()
         # Call the API
         ocr_results = search_dialogue_api(query=query, top_k=10)
+        st.write(f"Search took {time.time() - start} seconds.")
 
         # Display results
         if ocr_results:
