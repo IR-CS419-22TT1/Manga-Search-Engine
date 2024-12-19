@@ -76,7 +76,7 @@ def upload_image_to_backend(image_file):
         
         # Check for success
         if response.status_code == 201:
-            st.success(f"Image '{image_file.name}' uploaded successfully!")
+            # st.success(f"Image '{image_file.name}' uploaded successfully!")
             return response.json()  # Return the backend's response (e.g., saved file path)
         else:
             st.error(f"Failed to upload '{image_file.name}': {response.text}")
@@ -86,17 +86,10 @@ def upload_image_to_backend(image_file):
 
 # Process uploaded images
 if image_files:
-    st.write("Uploading images...")
-    
     for image_file in image_files:
         response = upload_image_to_backend(image_file)
         if response:
             uploaded_paths.append(response.get("image_path"))  # Collect the saved paths if provided
-
-    if uploaded_paths:
-        st.write("Uploaded images saved at:")
-        for path in uploaded_paths:
-            st.write(f"- {path}")
 
 # Session State Initialization
 if "results" not in st.session_state:
@@ -151,7 +144,7 @@ if st.button("Search"):
     
     # Case 1: Only 1 image is uploaded and no text input
     if len(image_files) == 1 and not any(st.session_state.text_inputs):
-        st.write('Case only one image no text', uploaded_paths)
+        # st.write('Case only one image no text', uploaded_paths)
         st.session_state.only_one_image_no_text = True
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
         # Display results
@@ -173,7 +166,7 @@ if st.button("Search"):
         st.session_state.only_one_image_no_text = False
             
     if not st.session_state.only_one_image_no_text:
-        st.write('Case multiple images or text', uploaded_paths)
+        # st.write('Case multiple images or text', st.session_state.text_inputs)
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
         # Display results
         if results:
