@@ -142,6 +142,10 @@ if st.button("Search"):
     final_caption = ""
     text_caption = ""
     image_caption = ""
+
+    if len(image_files) == 0 and not any(st.session_state.text_inputs):
+        st.warning("Please upload an image or provide a description.")
+        st.stop()
     
     # Case 1: Only 1 image is uploaded and no text input
     if len(image_files) == 1 and not any(st.session_state.text_inputs):

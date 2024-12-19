@@ -34,4 +34,6 @@ class SearchScene(Resource):
         if not image_path:
             image_path = []
         
+        print('text:', text)
+        print('image_path:', image_path)
         return self.service.get_result(image_path, text, top_k)
