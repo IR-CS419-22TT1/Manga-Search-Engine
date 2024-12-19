@@ -24,18 +24,19 @@ class SearchSceneService():
     
     def get_result(self, image_paths, text_inputs, top_k):
         image_captions = [self.gemini_service.generate_caption(image_path) for image_path in image_paths]
+        print('image_captions:', image_captions)
         combined_text = self.gemini_service.combine_text_inputs(text_inputs)
+        print('combined_text:', combined_text)
         combined_captions = self.gemini_service.combine_image_captions(image_captions)
+        print('combined_captions:', combined_captions)
 
         combined_text_and_captions = self.gemini_service.combine_text_image_caption(combined_text, combined_captions)
+        print('combined_text_and_captions:', combined_text_and_captions)
 
         # return self.chromadb_service.get_result(combined_text_and_captions, top_k)
         return self.format_result(self.chromadb_service.get_result(combined_text_and_captions, top_k))
     
     def get_result_one_image_no_text(self, image_path, text, top_k):
         image_captions = self.gemini_service.generate_caption(image_path[0])
+        print('image_captions:', image_captions)
         return self.format_result(self.chromadb_service.get_result_one_image_no_text(image_path[0], image_captions, top_k))
-
-
-
-

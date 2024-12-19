@@ -14,9 +14,9 @@ class GetImage(Resource):
 
     def get(self, filename):
         if self.image_service.image_exists(filename):
-            print(f'Image found: {filename}')
+            # print(f'Image found: {filename}')
             path = safe_join(os.fspath(DATASET_FOLDER), os.fspath(filename))
-            print(f'Path: {path}')
+            # print(f'Path: {path}')
             return send_from_directory(DATASET_FOLDER, filename)
         else:
             return {'message': 'Image not found'}, 404
