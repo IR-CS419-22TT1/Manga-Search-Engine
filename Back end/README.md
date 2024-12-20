@@ -19,3 +19,8 @@ GEMINI_API_KEY="AIzaSyAJmgIA-h6gBBqeEdSy1fUro-9HzAgu_i8"
 export FLASK_APP=app.py
 python -m flask run
 ```
+
+or you can run directly
+```
+flask run --host=0.0.0.0
+```
