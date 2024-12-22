@@ -11,6 +11,7 @@ from io import BytesIO
 BACKEND_API_URL = "http://127.0.0.1:5000/upload-image"  # Update with your backend URL
 SEARCH_SCENE_API_URL = "http://127.0.0.1:5000/search-scene"
 GET_IMAGE_API_URL = "http://127.0.0.1:5000/get-image"
+REFINE_RESULT_API_URL = "http://127.0.0.1:5000/refine-result"
 
 # Check for API key
 if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
@@ -101,9 +102,6 @@ if "results" not in st.session_state:
 if "selected_images" not in st.session_state:
     st.session_state.selected_images = []
 
-if "refine_results" not in st.session_state:
-    st.session_state.refine_results = False
-
 if "query_vector" not in st.session_state:
     st.session_state.query_vector = None
 
@@ -111,12 +109,29 @@ if "query_vector" not in st.session_state:
 @st.cache_resource
 def call_search_scene_api(image_paths, text_inputs, top_k):
     payload = {
+        "user_id": st.session_state.get("session_state_id_turn", 0),
         "image_path": image_paths,
         "text": text_inputs,
         "top_k": top_k
     }
     try:
         response = requests.post(SEARCH_SCENE_API_URL, json=payload)
+        if response.status_code == 200:
+            return response.json()["results"]
+        else:
+            st.error(f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        st.error(f"Failed to call API: {e}")
+    return []
+
+def call_refine_result_api(user_id, selections, top_k):
+    payload = {
+        "user_id": user_id,
+        "selections": selections,
+        "top_k": top_k
+    }
+    try:
+        response = requests.post(REFINE_RESULT_API_URL, json=payload)
         if response.status_code == 200:
             return response.json()["results"]
         else:
@@ -138,85 +153,43 @@ def fetch_image_from_backend(image_path):
         st.error(f"Error fetching image: {e}")
     return None
 
-if st.button("Search") or st.session_state.results:
+if st.button("Search"):
     results = {}
-    final_caption = ""
-    text_caption = ""
-    image_caption = ""
 
     if len(image_files) == 0 and not any(st.session_state.text_inputs):
         st.warning("Please upload an image or provide a description.")
         st.stop()
 
-    # Case 1: Only 1 image is uploaded and no text input
-    if len(image_files) == 1 and not any(st.session_state.text_inputs):
-        start = time.time()
-        results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
-        st.write(f"Search took {time.time() - start} seconds.")
-        
-        # Display results
-        if results:
-            col_subheader, col_button = st.columns([3, 1])
-            with col_subheader:
-                st.subheader("Search Results")
-            with col_button:
-                refine_disabled = not any(st.session_state.get("selected_images", []))
-                if st.button("Refine Results", disabled=refine_disabled):
-                    st.write("Refine logic to be added here.")
+    start = time.time()
+    results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
+    st.write(f"Search took {time.time() - start} seconds.")
+    
+    if results:
+        # Store results in session state
+        st.session_state.results = results
+        st.session_state.selected_images = [False] * len(results)
 
-            columns_per_row = 3
-            st.session_state.results = results
+# Display results
+if "results" in st.session_state and st.session_state.results:
+    col_subheader, col_button = st.columns([3, 1])
+    with col_subheader:
+        st.subheader("Search Results")
+    with col_button:
+        refine_disabled = not any(st.session_state.get("selected_images", []))
+        if st.button("Refine Results", disabled=refine_disabled):
+            print('images selected:', st.session_state.selected_images)
+            st.session_state.results = call_refine_result_api(st.session_state.get("session_state_id_turn", 0), st.session_state.get("selected_images", []), 10)
+            st.session_state.selected_images = [False] * len(st.session_state.results)
 
-            # Initialize selected images state
-            if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(results):
-                st.session_state.selected_images = [False] * len(results)
+    columns_per_row = 3
 
-            for row_start in range(0, len(results), columns_per_row):
-                cols = st.columns(columns_per_row)
-                for col, result, idx in zip(cols, results[row_start:row_start + columns_per_row], range(row_start, row_start + columns_per_row)):
-                    image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
-                    image = fetch_image_from_backend(image_path)
+    for row_start in range(0, len(st.session_state.results), columns_per_row):
+        cols = st.columns(columns_per_row)
+        for col, result, idx in zip(cols, st.session_state.results[row_start:row_start + columns_per_row], range(row_start, row_start + columns_per_row)):
+            image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
+            image = fetch_image_from_backend(image_path)
 
-                    with col:
-                        if image:
-                            st.session_state.selected_images[idx] = st.checkbox("Select", key=f"checkbox_{idx}", value=st.session_state.selected_images[idx])
-                            st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")
-
-        else:
-            st.warning("No results found.")
-
-    else:
-        start = time.time()
-        results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
-        st.write(f"Search took {time.time() - start} seconds.")
-
-        # Display results
-        if results:
-            col_subheader, col_button = st.columns([3, 1])
-            with col_subheader:
-                st.subheader("Search Results")
-            with col_button:
-                refine_disabled = not any(st.session_state.get("selected_images", []))
-                if st.button("Refine Results", disabled=refine_disabled):
-                    st.write("Refine logic to be added here.")
-
-            columns_per_row = 3
-            st.session_state.results = results
-
-            # Initialize selected images state
-            if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(results):
-                st.session_state.selected_images = [False] * len(results)
-
-            for row_start in range(0, len(results), columns_per_row):
-                cols = st.columns(columns_per_row)
-                for col, result, idx in zip(cols, results[row_start:row_start + columns_per_row], range(row_start, row_start + columns_per_row)):
-                    image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
-                    image = fetch_image_from_backend(image_path)
-
-                    with col:
-                        if image:
-                            st.session_state.selected_images[idx] = st.checkbox("Select", key=f"checkbox_{idx}", value=st.session_state.selected_images[idx])
-                            st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")
-
-        else:
-            st.warning("No results found.")
+            with col:
+                if image:
+                    st.session_state.selected_images[idx] = st.checkbox("Select", key=f"checkbox_{idx}", value=st.session_state.selected_images[idx])
+                    st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")

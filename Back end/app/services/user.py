@@ -1,5 +1,6 @@
 import os
 import random
+import numpy as np
 
 class UserService:
     def __init__(self, user_folder):
@@ -19,14 +20,18 @@ class UserService:
                     os.makedirs(user_path, exist_ok=False)  # Raise an error if the folder already exists
 
                     # Create initial files inside the folder
-                    initial_vector_file = os.path.join(user_path, "initial_vector_embedding.txt")
-                    result_vector_file = os.path.join(user_path, "result_vector_embedding.txt")
+                    initial_vector_file = os.path.join(user_path, "initial_vector_embedding.npy")
+                    result_vector_file = os.path.join(user_path, "result_vector_embedding.npy")
+                    mode_file = os.path.join(user_path, "mode.txt")
 
                     with open(initial_vector_file, 'w') as f:
                         f.write("")  # Create an empty file or add initial content
 
                     with open(result_vector_file, 'w') as f:
                         f.write("")  # Create an empty file or add initial content
+
+                    with open(mode_file, 'w') as f:
+                        f.write("")
 
                     # Return the user ID if successful
                     return user_id

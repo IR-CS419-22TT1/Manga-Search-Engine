@@ -4,6 +4,7 @@ from app.controllers.upload_image import UploadImage, UPLOAD_IMAGE_ROUTE
 from app.controllers.get_image import GetImage, GET_IMAGE_ROUTE
 from app.controllers.search_scene import SearchScene, SEARCH_SCENE_ROUTE
 from app.controllers.search_dialogue import SearchDialogue, SEARCH_DIALOGUE_ROUTE
+from app.controllers.refine_result import RefineResult, REFINE_ROUTE
 from app.main.errors import errors
 
 # Flask API Configuration
@@ -21,3 +22,4 @@ api.add_resource(GetImage, GET_IMAGE_ROUTE)
 api.add_resource(SearchScene, SEARCH_SCENE_ROUTE)
 api.add_resource(SearchDialogue, SEARCH_DIALOGUE_ROUTE)
 api.add_resource(User, USER_ROUTE)
+api.add_resource(RefineResult, REFINE_ROUTE)

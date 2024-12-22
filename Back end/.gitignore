@@ -5,6 +5,7 @@ venv/
 .env
 
 app/database/dataset/
+app/database/user/
 
 *.pyc
 __pycache__/

@@ -8,12 +8,13 @@ class SearchSceneService():
 
     def format_result(self, result):
         results = []
-        for id, distance in result:
+        for id, (distance, embedding) in result.items():
             base_name = id.split('.')[0]
             fields = base_name.split('_')
             results.append({
                 "id": f'{fields[1]}_{fields[2]}_{fields[3]}',
                 "distance": distance,
+                # "embedding": embedding.tolist(),
                 "manga": fields[1],
                 "page_type": fields[2],
                 "page_number": fields[3],
@@ -22,7 +23,7 @@ class SearchSceneService():
             "results": results
         }
     
-    def get_result(self, image_paths, text_inputs, top_k):
+    def get_result(self, image_paths, text_inputs, top_k, user_id):
         image_captions = None
         image_captions = [self.gemini_service.generate_caption(image_path) for image_path in image_paths]
         print('image_captions:', image_captions)
@@ -45,9 +46,9 @@ class SearchSceneService():
         print('combined_text_and_captions:', combined_text_and_captions)
 
         # return self.chromadb_service.get_result(combined_text_and_captions, top_k)
-        return self.format_result(self.chromadb_service.get_result(combined_text_and_captions, top_k))
+        return self.format_result(self.chromadb_service.get_result(combined_text_and_captions, top_k, user_id))
     
-    def get_result_one_image_no_text(self, image_path, text, top_k):
+    def get_result_one_image_no_text(self, image_path, text, top_k, user_id):
         image_captions = self.gemini_service.generate_caption(image_path[0])
         print('image_captions:', image_captions)
-        return self.format_result(self.chromadb_service.get_result_one_image_no_text(image_path[0], image_captions, top_k))
+        return self.format_result(self.chromadb_service.get_result_one_image_no_text(image_path[0], image_captions, top_k, user_id))
