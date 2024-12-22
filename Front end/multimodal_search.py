@@ -26,6 +26,7 @@ with col1:
 with col2:
     st.title("Multimodal Scene Search")
 
+st.info('id turn: ' + str(st.session_state.get("session_state_id_turn", "None")))
 st.info("Type **descriptions** or upload **images** you want to search 💖")
 with open('./style.css') as f:
     css = f.read()

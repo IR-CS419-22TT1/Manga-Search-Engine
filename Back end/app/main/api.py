@@ -1,5 +1,5 @@
 from flask_restful import Api
-from app.controllers.user import UserList, User
+from app.controllers.user import User, USER_ROUTE
 from app.controllers.upload_image import UploadImage, UPLOAD_IMAGE_ROUTE
 from app.controllers.get_image import GetImage, GET_IMAGE_ROUTE
 from app.controllers.search_scene import SearchScene, SEARCH_SCENE_ROUTE
@@ -20,3 +20,4 @@ api.add_resource(UploadImage, UPLOAD_IMAGE_ROUTE)
 api.add_resource(GetImage, GET_IMAGE_ROUTE)
 api.add_resource(SearchScene, SEARCH_SCENE_ROUTE)
 api.add_resource(SearchDialogue, SEARCH_DIALOGUE_ROUTE)
+api.add_resource(User, USER_ROUTE)
