@@ -137,7 +137,7 @@ def fetch_image_from_backend(image_path):
         st.error(f"Error fetching image: {e}")
     return None
 
-if st.button("Search"):
+if st.button("Search") or st.session_state.results:
     results = {}
     final_caption = ""
     text_caption = ""
@@ -146,45 +146,76 @@ if st.button("Search"):
     if len(image_files) == 0 and not any(st.session_state.text_inputs):
         st.warning("Please upload an image or provide a description.")
         st.stop()
-    
+
     # Case 1: Only 1 image is uploaded and no text input
     if len(image_files) == 1 and not any(st.session_state.text_inputs):
-        # st.write('Case only one image no text', uploaded_paths)
         start = time.time()
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
         st.write(f"Search took {time.time() - start} seconds.")
+        
         # Display results
         if results:
-            st.subheader("Search Results")
+            col_subheader, col_button = st.columns([3, 1])
+            with col_subheader:
+                st.subheader("Search Results")
+            with col_button:
+                refine_disabled = not any(st.session_state.get("selected_images", []))
+                if st.button("Refine Results", disabled=refine_disabled):
+                    st.write("Refine logic to be added here.")
+
             columns_per_row = 3
+            st.session_state.results = results
+
+            # Initialize selected images state
+            if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(results):
+                st.session_state.selected_images = [False] * len(results)
+
             for row_start in range(0, len(results), columns_per_row):
                 cols = st.columns(columns_per_row)
-                for col, result in zip(cols, results[row_start:row_start + columns_per_row]):
+                for col, result, idx in zip(cols, results[row_start:row_start + columns_per_row], range(row_start, row_start + columns_per_row)):
                     image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
                     image = fetch_image_from_backend(image_path)
 
                     with col:
                         if image:
+                            st.session_state.selected_images[idx] = st.checkbox("Select", key=f"checkbox_{idx}", value=st.session_state.selected_images[idx])
                             st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")
+
         else:
             st.warning("No results found.")
+
     else:
-        # st.write('Case multiple images or text', st.session_state.text_inputs)
         start = time.time()
         results = call_search_scene_api(image_paths=uploaded_paths, text_inputs=st.session_state.text_inputs, top_k=10)
         st.write(f"Search took {time.time() - start} seconds.")
+
         # Display results
         if results:
-            st.subheader("Search Results")
+            col_subheader, col_button = st.columns([3, 1])
+            with col_subheader:
+                st.subheader("Search Results")
+            with col_button:
+                refine_disabled = not any(st.session_state.get("selected_images", []))
+                if st.button("Refine Results", disabled=refine_disabled):
+                    st.write("Refine logic to be added here.")
+
             columns_per_row = 3
+            st.session_state.results = results
+
+            # Initialize selected images state
+            if "selected_images" not in st.session_state or len(st.session_state.selected_images) != len(results):
+                st.session_state.selected_images = [False] * len(results)
+
             for row_start in range(0, len(results), columns_per_row):
                 cols = st.columns(columns_per_row)
-                for col, result in zip(cols, results[row_start:row_start + columns_per_row]):
+                for col, result, idx in zip(cols, results[row_start:row_start + columns_per_row], range(row_start, row_start + columns_per_row)):
                     image_path = f"{result['manga']}/{result['page_type']}/{result['page_number']}.png"
                     image = fetch_image_from_backend(image_path)
 
                     with col:
                         if image:
+                            st.session_state.selected_images[idx] = st.checkbox("Select", key=f"checkbox_{idx}", value=st.session_state.selected_images[idx])
                             st.image(image, caption=f"{result['manga']} - {result['page_type']} - {result['page_number']}")
+
         else:
             st.warning("No results found.")
