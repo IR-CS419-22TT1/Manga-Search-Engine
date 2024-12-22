@@ -12,9 +12,11 @@ GEMINI_API_KEY="AIzaSyAJmgIA-h6gBBqeEdSy1fUro-9HzAgu_i8"
 
 3. Let the folder `dataset/` in folder `app/database/`. The folder `dataset` is the [Japanese Manga Dataset](https://www.kaggle.com/datasets/chandlertimm/unified) from Kaggle.
 
-4. Creating folder named "Manga-Search-Engine images_received" in your disk D:/, so that the server could receive images uploaded by users.
+4. Let the folder `user/` in folder `app/database/`
 
-5. Running
+5. Creating folder named "Manga-Search-Engine images_received" in your disk D:/, so that the server could receive images uploaded by users.
+
+6. Running
 ```
 export FLASK_APP=app.py
 python -m flask run
