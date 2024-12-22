@@ -39,7 +39,7 @@ if "session_state_id_turn" not in st.session_state:
         response = requests.post(REGISTER_USER_API_URL)
         if response.status_code == 201:
             st.session_state.session_state_id_turn = response.json().get("user_id")
-            st.success(f"User registered with ID: {st.session_state.session_state_id_turn}")
+            # st.success(f"User registered with ID: {st.session_state.session_state_id_turn}")
         else:
             st.error(f"Error registering user: {response.json().get('message')}")
     except requests.exceptions.RequestException as e:
