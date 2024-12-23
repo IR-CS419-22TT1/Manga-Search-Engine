@@ -1,45 +1,43 @@
 import streamlit as st
-from dotenv import load_dotenv
-import os
 import requests  # Import requests for API calls
 
 REGISTER_USER_API_URL = "http://127.0.0.1:5000/register-user"
 
 st.set_page_config(page_title="Manga Retrieval", page_icon=":material/edit:")
 
-# Load .env file
-load_dotenv()
-
 # Sidebar input for API key
 st.sidebar.title("Gemini API 🔑")
 
-# Check if API key is already in .env
-default_api_key = os.getenv("GEMINI_API_KEY", "")
-model_name = "gemini-1.5-flash"
+# Initialize session state for the button visibility
+if "send_button_visible" not in st.session_state:
+    st.session_state.send_button_visible = False
 
 # Text input for API key
 api_key = st.sidebar.text_input(
     "Enter Key",
-    value=default_api_key,
+    value='',
     type="password",
-    help="You can enter your Gemini API key here or set it in a .env file"
+    help="You can enter your Gemini API key here"
 )
 
-# Store the API key in session state
-if "gemini_api_key" not in st.session_state:
-    st.session_state.gemini_api_key = api_key
+# Determine button visibility based on input value
+st.session_state.send_button_visible = bool(api_key.strip())  # True if text is not empty
 
-# Update API key if user enters a new one
-if api_key:
-    st.session_state.gemini_api_key = api_key
+# Render the "Send" button if input is provided
+if st.session_state.send_button_visible:
+    button_clicked = st.sidebar.button("Send")
 
-# Call backend API to register user and store the id
+    # Logic when button is clicked
+    if button_clicked:
+        st.session_state.send_button_visible = False  # Hide button after click
+        st.sidebar.success("API key sent successfully!")
+
+# Call backend API to register user and store the ID
 if "session_state_id_turn" not in st.session_state:
     try:
         response = requests.post(REGISTER_USER_API_URL)
         if response.status_code == 201:
             st.session_state.session_state_id_turn = response.json().get("user_id")
-            # st.success(f"User registered with ID: {st.session_state.session_state_id_turn}")
         else:
             st.error(f"Error registering user: {response.json().get('message')}")
     except requests.exceptions.RequestException as e:

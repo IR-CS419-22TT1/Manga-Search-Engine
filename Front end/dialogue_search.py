@@ -10,12 +10,6 @@ BACKEND_API_URL = "http://127.0.0.1:5000/search-dialouge"  # Update with your ba
 # Backend API for getting images
 GET_IMAGE_API = "http://127.0.0.1:5000/get-image"
 
-# Check for API key
-if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
-    st.sidebar.success("✅ API Key is provided!")
-else:
-    st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
-
 col1, col2 = st.columns([1, 3])
 with col1:
     st.image('./assets/app_logo.png', width=200)

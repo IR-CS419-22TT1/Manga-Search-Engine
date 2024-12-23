@@ -1,8 +1,6 @@
 import time
 import streamlit as st
-import numpy as np
 from PIL import Image
-import os
 import requests
 import io
 from io import BytesIO
@@ -12,14 +10,6 @@ BACKEND_API_URL = "http://127.0.0.1:5000/upload-image"  # Update with your backe
 SEARCH_SCENE_API_URL = "http://127.0.0.1:5000/search-scene"
 GET_IMAGE_API_URL = "http://127.0.0.1:5000/get-image"
 REFINE_RESULT_API_URL = "http://127.0.0.1:5000/refine-result"
-
-# Check for API key
-if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
-    st.sidebar.success("✅ API Key is provided!")
-else:
-    st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
-    
-model_name = "gemini-1.5-flash"
 
 col1, col2 = st.columns([1, 3]) 
 with col1:
