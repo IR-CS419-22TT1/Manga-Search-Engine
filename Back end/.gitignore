@@ -6,6 +6,7 @@ venv/
 
 app/database/dataset/
 app/database/user/
+app/database/images_upload/
 
 *.pyc
 __pycache__/
