@@ -1,8 +1,10 @@
 from flask_restful import Resource, reqparse
 from werkzeug.datastructures import FileStorage
 from app.services.upload_image_service import ImageService
+import os
+from app.main.settings import Config
 
-UPLOAD_FOLDER = 'D:/Manga-Search-Engine images_received'
+UPLOAD_FOLDER = os.path.abspath(os.path.join(Config.CHROMA_DB_PATH, 'images_upload'))
 UPLOAD_IMAGE_ROUTE = '/upload-image'
 
 class UploadImage(Resource):
