@@ -14,11 +14,9 @@ GEMINI_API_KEY="AIzaSyAJmgIA-h6gBBqeEdSy1fUro-9HzAgu_i8"
 
 4. Let the folder `user/` in folder `app/database/`
 
-5. Let the folder `images_upload/` in folder `app/database/`
+5. Let the folder `images_upload/` in folder `app/database/`, so that the server could receive images uploaded by users.
 
-6. Creating folder named "Manga-Search-Engine images_received" in your disk D:/, so that the server could receive images uploaded by users.
-
-7. Running
+6. Running
 ```
 export FLASK_APP=app.py
 python -m flask run
