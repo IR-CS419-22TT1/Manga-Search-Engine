@@ -1,8 +1,15 @@
 from app.services.chromadb_service import ChromaDBService
 from app.services.gemini_service import GeminiService
+import os
+from app.main.settings import Config
 
 class SearchSceneService():
-    def __init__(self):
+    def __init__(self, user_id):
+        api_key = self.check_file_api_key_from_user_exist(user_id)
+        if api_key:
+            self.set_api_key_from_user(api_key)
+        else:
+            self.set_api_key_default()
         self.chromadb_service = ChromaDBService()
         self.gemini_service = GeminiService()
 
@@ -22,6 +29,30 @@ class SearchSceneService():
         return {
             "results": results
         }
+    
+    def check_file_api_key_from_user_exist(self, user_id):
+        user_folder = os.path.abspath(os.path.join(Config.CHROMA_DB_PATH, 'user'))
+        try:
+            user_path = os.path.join(user_folder, str(user_id))
+            api_key_file = os.path.join(user_path, "api_key.txt")
+            if os.path.exists(api_key_file):
+                with open(api_key_file, 'r') as f:
+                    api_key = f.readline().strip()
+                    if api_key:
+                        return api_key
+                    return None
+            else:
+                return None
+        except Exception as e:
+            print(f"Error: {e}")
+    
+    def set_api_key_from_user(self, api_key):
+        Config.GEMINI_API_KEY = api_key
+        print('API Key User:', Config.GEMINI_API_KEY)
+    
+    def set_api_key_default(self):
+        Config.GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+        print('API Key Default:', Config.GEMINI_API_KEY)
     
     def get_result(self, image_paths, text_inputs, top_k, user_id):
         image_captions = None

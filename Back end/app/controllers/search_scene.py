@@ -10,7 +10,8 @@ class SearchScene(Resource):
         self.parser.add_argument('image_path', type=list[str], location='json', required=False, help='Image path is required')
         self.parser.add_argument('text', type=list[str], location='json', required=False, help='Text is required')
         self.parser.add_argument('top_k', type=int, location='json', required=True, help='Top k is required')
-        self.service = SearchSceneService()
+        self.once_args = self.parser.parse_args()
+        self.service = SearchSceneService(self.once_args['user_id'])
 
     def post(self):
         args = self.parser.parse_args()
