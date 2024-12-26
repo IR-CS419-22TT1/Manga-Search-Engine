@@ -62,8 +62,8 @@ class ClientFactory:
         return client_class(**kwargs)
 
 class GeminiService:
-    def __init__(self):
-        self.api_key = Config.GEMINI_API_KEY
+    def __init__(self, api_key):
+        self.api_key = api_key
         self.model_name = Config.GEMINI_MODEL_NAME
         self.temperature = 0.7
         if not self.api_key:

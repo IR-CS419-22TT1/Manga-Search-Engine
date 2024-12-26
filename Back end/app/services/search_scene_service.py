@@ -6,12 +6,8 @@ from app.main.settings import Config
 class SearchSceneService():
     def __init__(self, user_id):
         api_key = self.check_file_api_key_from_user_exist(user_id)
-        if api_key:
-            self.set_api_key_from_user(api_key)
-        else:
-            self.set_api_key_default()
         self.chromadb_service = ChromaDBService()
-        self.gemini_service = GeminiService()
+        self.gemini_service = GeminiService(api_key)
 
     def format_result(self, result):
         results = []
@@ -40,19 +36,11 @@ class SearchSceneService():
                     api_key = f.readline().strip()
                     if api_key:
                         return api_key
-                    return None
+                    return Config.GEMINI_API_KEY
             else:
-                return None
+                return Config.GEMINI_API_KEY
         except Exception as e:
             print(f"Error: {e}")
-    
-    def set_api_key_from_user(self, api_key):
-        Config.GEMINI_API_KEY = api_key
-        print('API Key User:', Config.GEMINI_API_KEY)
-    
-    def set_api_key_default(self):
-        Config.GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-        print('API Key Default:', Config.GEMINI_API_KEY)
     
     def get_result(self, image_paths, text_inputs, top_k, user_id):
         image_captions = None
