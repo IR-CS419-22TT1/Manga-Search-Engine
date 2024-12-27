@@ -181,7 +181,7 @@ class ChromaDBService:
             img = Image.open(image_path).convert("RGB")
             img_array = np.array(img)
             # Query both databases
-            results_visual = self.visual_collection.query(query_images=[img_array], n_results=top_k, include=['distances', 'embeddings'])
+            results_visual = self.visual_collection.query(query_embeddings=[new_query_vector.tolist()], n_results=top_k, include=['distances', 'embeddings'])
             results_caption = self.caption_collection.query(query_embeddings=[new_query_vector.tolist()], n_results=top_k, include=['distances', 'embeddings'])
         elif mode == '2':
             # Query both databases with the refined query vector

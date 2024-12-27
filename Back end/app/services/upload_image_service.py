@@ -6,9 +6,10 @@ class ImageService:
     def __init__(self, upload_folder):
         self.upload_folder = upload_folder
 
-    def save_image(self, image):
+    def save_image(self, image, user_id):
         filename = image.filename
         filename = secure_filename(filename)
+        filename = f'{user_id}_{filename}'
         filepath = os.path.join(self.upload_folder, filename)
         image.save(filepath)
         return filepath
