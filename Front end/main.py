@@ -23,13 +23,17 @@ sidebar_pg = f"""
 <style>
 [data-testid="stSidebarNav"] {{
 border-radius: 20px;
-padding: 10px;
+padding: 10px 0px;
 background-color: white;
 margin: 10px;
 }}
+[data-testid="stSidebarNavSeparator"] {{
+padding: 0px;
+margin: 0px 10px;
+}}
 [data-testid="stSidebarUserContent"] {{
 border-radius: 20px;
-padding: 15px;
+padding: 10px;
 background-color: white;
 margin: 5px;
 }}

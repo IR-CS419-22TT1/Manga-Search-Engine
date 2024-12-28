@@ -34,10 +34,10 @@ background: rgba(0, 0, 0, 0);
 [data-testid="stToolbar"] {{
 right: 2rem;
 }}
-[data-testid="stSidebar"] {{
-background-image: url('data:image/png;base64,{sidebar_img}');
-background-size: center;
-}}
+# [data-testid="stSidebar"] {{
+# background-image: url('data:image/png;base64,{sidebar_img}');
+# background-size: center;
+# }}
 [data-testid="stMainBlockContainer"]{{
 border: 15px solid white;
 border-radius: 20px;
