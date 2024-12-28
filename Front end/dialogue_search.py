@@ -1,9 +1,11 @@
+import json
 import time
 import streamlit as st
 import os
 import requests
 from PIL import Image
 from io import BytesIO
+import base64
 
 # Backend API endpoint
 BACKEND_API_URL = "http://127.0.0.1:5000/search-dialouge"  # Update with your backend URL
@@ -16,17 +18,52 @@ if "gemini_api_key" in st.session_state and st.session_state.gemini_api_key:
 else:
     st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
 
+background_img = st.session_state.index["app_background6"]
+sdiebar_img = st.session_state.index["app_background2"]
+
+page_bg_img = f"""
+<style>
+[data-testid="stAppViewContainer"] {{
+background-image: url(https://images2.alphacoders.com/740/thumb-1920-740460.png);
+background-size: cover;
+background-repeat: no-repeat;
+}}
+[data-testid="stHeader"] {{
+background: rgba(0, 0, 0, 0);
+}}
+[data-testid="stToolbar"] {{
+right: 2rem;
+}}
+[data-testid="stSidebar"] {{
+#background-image: url('data:image/png;base64,{sdiebar_img}');
+background-size: center;
+}}
+[data-testid="stMainBlockContainer"]{{
+border: 15px solid white;
+border-radius: 20px;
+padding: 5px;
+background-color: white;
+margin: 20px 0px;
+box-shadow": "0 0 10px rgba(0,0,0,0.5)
+}}
+[data-testid="stSidebarCollapsedControl"] {{
+border-radius: 5px;
+background-color: white;
+}}
+[class="stColumn st-emotion-cache-1vsvu9j eiemyj2"] {{
+margin: auto;
+}}
+[class="stColumn st-emotion-cache-1vj2wxa eiemyj2"] {{
+padding: 7px;
+}}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
 col1, col2 = st.columns([1, 3])
 with col1:
     st.image('./assets/app_logo3.png', width=200)
 with col2:
-    row1, row2, row3 = st.columns(1), st.columns(1), st.columns(1)
-    with row1[0]:
-        st.empty()  # Leave the first row empty
-    with row2[0]:
-        st.empty()  # Leave the third row empty
-    with row3[0]:
-        st.title("💬 Dialogue Search")  # Add the title to the second row
+    st.title("💬 Dialogue Search")  # Add the title to the second row
 
 
 st.info("Type a **dialogue** you want to search or pick one of these suggestions:")

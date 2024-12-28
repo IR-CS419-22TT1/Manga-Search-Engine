@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 from dotenv import load_dotenv
 import os
@@ -7,6 +8,38 @@ st.set_page_config(page_title="Manga Retrieval", page_icon=":material/edit:")
 # Load .env file
 load_dotenv()
 
+@st.cache_resource
+def get_img():
+    print("Loading images...")
+    with open('./assets/img_map.json', 'r') as f:
+        index = json.load(f)
+    return index
+
+index = get_img()
+
+st.session_state.index = index
+
+sidebar_pg = f"""
+<style>
+[data-testid="stSidebarNav"] {{
+border-radius: 20px;
+padding: 10px;
+background-color: white;
+margin: 10px;
+}}
+[data-testid="stSidebarUserContent"] {{
+border-radius: 20px;
+padding: 15px;
+background-color: white;
+margin: 5px;
+}}
+[data-testid="stSidebarCollapseButton"] {{
+border-radius: 5px;
+background-color: white;
+}}
+</style>
+"""
+st.markdown(sidebar_pg, unsafe_allow_html=True)
 # Sidebar input for API key
 st.sidebar.title("Gemini API 🔑")
 

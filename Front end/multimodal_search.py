@@ -1,3 +1,4 @@
+import json
 import time
 import streamlit as st
 import numpy as np
@@ -20,23 +21,54 @@ else:
     
 model_name = "gemini-1.5-flash"
 
+background_img = st.session_state.index["app_background4"]
+sdiebar_img = st.session_state.index["app_background1"]
+
+page_bg_img = f"""
+<style>
+[data-testid="stAppViewContainer"] {{
+background-image: url('data:image/png;base64,{background_img}');
+background-size: cover;
+background-repeat: no-repeat;
+}}
+[data-testid="stHeader"] {{
+background: rgba(0, 0, 0, 0);
+}}
+[data-testid="stToolbar"] {{
+right: 2rem;
+}}
+[data-testid="stSidebar"] {{
+background-image: url('data:image/png;base64,{sdiebar_img}');
+background-size: center;
+}}
+[data-testid="stMainBlockContainer"]{{
+border: 15px solid white;
+border-radius: 20px;
+padding: 5px;
+background-color: white;
+margin: 20px 0px;
+}}
+[data-testid="stSidebarCollapsedControl"] {{
+border-radius: 5px;
+background-color: white;
+}}
+[class="stColumn st-emotion-cache-1vsvu9j eiemyj2"] {{
+margin: auto;
+}}
+[class="stColumn st-emotion-cache-1vj2wxa eiemyj2"] {{
+padding: 7px;
+}}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
 col1, col2 = st.columns([1, 3]) 
 with col1:
     st.image('./assets/app_logo3.png', width=200)
 with col2:
-    row1, row2, row3 = st.columns(1), st.columns(1), st.columns(1)
-    with row1[0]:
-        st.empty()  # Leave the first row empty
-    with row2[0]:
-        st.empty()  # Leave the third row empty
-    with row3[0]:
-        st.title("Multimodal Scene Search")  # Add the title to the second row
+    st.title("Multimodal Scene Search")  # Add the title to the second row
 
 st.info("Type **descriptions** or upload **images** you want to search 💖")
-with open('./style.css') as f:
-    css = f.read()
-
-st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)\
     
 if "text_inputs" not in st.session_state:
     st.session_state.text_inputs = [""]
