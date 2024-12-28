@@ -22,7 +22,7 @@ else:
 model_name = "gemini-1.5-flash"
 
 background_img = st.session_state.index["app_background4"]
-sdiebar_img = st.session_state.index["app_background1"]
+sidebar_img = st.session_state.index["app_background1"]
 
 page_bg_img = f"""
 <style>
@@ -38,7 +38,7 @@ background: rgba(0, 0, 0, 0);
 right: 2rem;
 }}
 [data-testid="stSidebar"] {{
-background-image: url('data:image/png;base64,{sdiebar_img}');
+background-image: url('data:image/png;base64,{sidebar_img}');
 background-size: center;
 }}
 [data-testid="stMainBlockContainer"]{{

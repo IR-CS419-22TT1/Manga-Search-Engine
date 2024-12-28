@@ -19,7 +19,7 @@ else:
     st.sidebar.error("⚠️ No API key detected! Please set it on the main page.")
 
 background_img = st.session_state.index["app_background6"]
-sdiebar_img = st.session_state.index["app_background2"]
+sidebar_img = st.session_state.index["app_background2"]
 
 page_bg_img = f"""
 <style>
@@ -35,7 +35,7 @@ background: rgba(0, 0, 0, 0);
 right: 2rem;
 }}
 [data-testid="stSidebar"] {{
-#background-image: url('data:image/png;base64,{sdiebar_img}');
+background-image: url('data:image/png;base64,{sidebar_img}');
 background-size: center;
 }}
 [data-testid="stMainBlockContainer"]{{
