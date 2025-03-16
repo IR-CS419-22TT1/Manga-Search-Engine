@@ -3,6 +3,7 @@
 venv/
 .venv/
 .env
+env
 
 app/database/dataset/
 app/database/user/
